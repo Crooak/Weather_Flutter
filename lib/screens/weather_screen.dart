@@ -64,6 +64,11 @@ class _WeatherScreenState extends State<WeatherScreen>
   // 0 — без фона, 1 — весна, 2 — лето, 3 — осень, 4 — зима
   int _seasonIndex = 0;
 
+  // 0 — день, 1 — ночь
+  int _themeIndex = 0;
+
+  static const String _prefsKeyTheme = 'theme_index';
+
   static const String _prefsKeySeason = 'season_index';
   static const Duration _autoRefreshThreshold = Duration(minutes: 5);
   static const Duration _gpsCacheTtl = Duration(minutes: 15);
@@ -89,6 +94,7 @@ class _WeatherScreenState extends State<WeatherScreen>
     )..repeat();
 
     _loadSeasonFromPrefs();
+    _loadThemeFromPrefs();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadWeatherByGPS();
@@ -166,6 +172,35 @@ class _WeatherScreenState extends State<WeatherScreen>
       }
     } catch (_) {}
   }
+
+    // ==================== СОХРАНЕНИЕ ТЕМЫ ====================
+
+  Future<void> _loadThemeFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getInt(_prefsKeyTheme) ?? 0;
+      if (!mounted) return;
+      if (saved >= 0 && saved <= 1 && saved != _themeIndex) {
+        setState(() => _themeIndex = saved);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveThemeToPrefs(int index) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt(_prefsKeyTheme, index);
+    } catch (_) {}
+  }
+
+  void _toggleTheme() {
+    final int next = _themeIndex == 0 ? 1 : 0;
+    setState(() => _themeIndex = next);
+    _saveThemeToPrefs(next);
+  }
+
+  List<Color> get _currentGradient =>
+      _themeIndex == 1 ? AppColors.nightGradient : AppColors.dayGradient;
 
   Future<void> _saveSeasonToPrefs(int index) async {
     try {
@@ -1963,6 +1998,34 @@ class _WeatherScreenState extends State<WeatherScreen>
     );
   }
 
+    Widget _buildThemeButton() {
+    final bool isNight = _themeIndex == 1;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: _toggleTheme,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.25),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            isNight ? Icons.nightlight_round : Icons.wb_sunny_outlined,
+            color: Colors.white.withValues(alpha: 0.85),
+            size: 20,
+          ),
+        ),
+      ),
+    );
+  }
+
   // ==================== ПЛАВНЫЙ КОНТЕНТ ====================
 
   Widget _buildAnimatedWeatherContent() {
@@ -2028,12 +2091,14 @@ class _WeatherScreenState extends State<WeatherScreen>
     return Scaffold(
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeInOut,
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: AppColors.dayGradient,
+                colors: _currentGradient,
               ),
             ),
           ),
@@ -2271,9 +2336,16 @@ class _WeatherScreenState extends State<WeatherScreen>
 
                             _buildAnimatedWeatherContent(),
 
-                            Align(
+                                                        Align(
                               alignment: Alignment.centerRight,
-                              child: _buildSeasonButton(),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _buildThemeButton(),
+                                  const SizedBox(width: 8),
+                                  _buildSeasonButton(),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 8),
 
