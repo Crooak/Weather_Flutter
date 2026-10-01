@@ -1,0 +1,35 @@
+name: weather
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Работа с геопозицией (последняя мажорная версия)
+  geolocator: ^13.0.0
+  # HTTP-запросы для API погоды
+  http: ^1.2.0
+  # Размытие и стеклянный эффект
+  blurrycontainer: ^1.0.2
+  shared_preferences: ^2.2.0
+  
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "sun-moon-svgrepo-com.png"
+  adaptive_icon_background: "#5B86E5"
+  adaptive_icon_foreground: "sun-moon-svgrepo-com.png"
+
+flutter:
+  uses-material-design: true
